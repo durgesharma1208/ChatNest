@@ -1,7 +1,64 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ChatNest — Your AI Assistant</title><style>
 :root{color-scheme:dark;--bg:#0e1117;--side:#151a24;--panel:#1c2330;--border:#2b3442;--text:#edf0f6;--muted:#9ba8bd;--accent:#8b7cf6}body.light{color-scheme:light;--bg:#f6f7fb;--side:#e9edf5;--panel:#fff;--border:#d9deea;--text:#222b3b;--muted:#657187;--accent:#6354d8}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}button,textarea{font:inherit}button{cursor:pointer}#app{display:flex;height:100dvh}.sidebar{width:270px;background:var(--side);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:18px;gap:14px}.brand{display:flex;align-items:center;gap:10px;font-weight:750;font-size:20px}.logo{display:grid;place-items:center;width:35px;height:35px;border-radius:11px;background:linear-gradient(135deg,#8b7cf6,#4bc1c6);color:white}.new,.theme{background:transparent;border:1px solid var(--border);color:var(--text);border-radius:11px;padding:11px 12px;text-align:left}.new:hover,.theme:hover,.history-item:hover{background:var(--panel)}.small-title{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.08em}.history{overflow:auto;flex:1}.history-item{width:100%;border:0;background:transparent;color:var(--text);padding:11px;border-radius:9px;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.history-item.active{background:var(--panel)}.side-footer{display:flex;flex-direction:column;gap:8px}.main{min-width:0;flex:1;display:flex;flex-direction:column}.top{height:66px;display:flex;align-items:center;justify-content:space-between;padding:0 25px;border-bottom:1px solid var(--border)}.top .subtitle{color:var(--muted);font-size:13px}.pill{border:1px solid var(--border);border-radius:20px;padding:5px 10px;color:var(--muted);font-size:12px}.messages{flex:1;overflow:auto;padding:28px max(18px,calc((100% - 800px)/2))}.welcome{text-align:center;margin:12vh auto 0;max-width:560px}.welcome h1{font-size:38px;letter-spacing:-.05em;margin:15px 0 5px}.welcome p{color:var(--muted)}.suggestions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:28px}.suggestions button{background:var(--panel);color:var(--text);border:1px solid var(--border);padding:17px;text-align:left;border-radius:13px}.bubble{margin:0 0 22px;display:flex;gap:14px;align-items:flex-start}.avatar{width:33px;height:33px;border-radius:10px;flex:none;background:var(--panel);display:grid;place-items:center}.bubble.user .avatar{background:var(--accent);color:#fff}.message-body{white-space:pre-wrap;overflow-wrap:anywhere;padding-top:4px;max-width:calc(100% - 47px)}.composer-wrap{padding:16px 22px 22px}.composer{max-width:800px;margin:auto;border:1px solid var(--border);background:var(--panel);border-radius:18px;display:flex;align-items:end;padding:12px;gap:10px}.composer textarea{resize:none;max-height:190px;min-height:33px;flex:1;border:0;outline:0;background:transparent;color:var(--text)}.send{border:0;background:var(--accent);color:white;border-radius:11px;min-width:42px;height:42px;font-size:21px}.note{text-align:center;color:var(--muted);font-size:11px;margin-top:9px}.mobile-menu{display:none;background:transparent;border:0;color:var(--text);font-size:25px}.delete{background:none;border:0;color:var(--muted);cursor:pointer;float:right}@media(max-width:700px){.sidebar{position:absolute;z-index:10;inset:0 auto 0 0;transform:translateX(-100%);transition:.2s;box-shadow:0 0 30px #0003}.sidebar.open{transform:none}.mobile-menu{display:block}.top{padding:0 15px}.messages{padding:20px 14px}.welcome{margin-top:8vh}.welcome h1{font-size:29px}.suggestions{grid-template-columns:1fr}.composer-wrap{padding:10px}}
-</style></head><body><div id="app"><aside class="sidebar" id="sidebar"><div class="brand"><div class="logo">✦</div>ChatNest</div><button class="new" id="newChat">＋ New chat</button><div class="small-title">Your conversations</div><div class="history" id="history"></div><div class="side-footer"><button class="theme" id="theme">◐ Toggle theme</button><small style="color:var(--muted)">Chats saved only in this browser</small></div></aside><main class="main"><header class="top"><div style="display:flex;align-items:center;gap:12px"><button class="mobile-menu" id="menu">☰</button><div><strong>ChatNest AI</strong><div class="subtitle">A space to think, learn & create</div></div></div><span class="pill" id="mode">On-device AI</span></header><section class="messages" id="messages"></section><div class="composer-wrap"><form class="composer" id="form"><textarea id="prompt" rows="1" placeholder="Ask me anything..." aria-label="Your message"></textarea><button class="send" type="submit" aria-label="Send">↑</button></form><div class="note">First message downloads a small language model. Your conversations stay on this device.</div></div></main></div><script>
-const $=id=>document.getElementById(id);const KEY='chatnest-v1';let chats=[],active=null;try{chats=JSON.parse(localStorage.getItem(KEY))||[]}catch{};let dark=localStorage.getItem('chatnest-theme')!=='light';document.body.classList.toggle('light',!dark);const save=()=>localStorage.setItem(KEY,JSON.stringify(chats));function newChat(){const c={id:crypto.randomUUID(),title:'New conversation',messages:[]};chats.unshift(c);active=c.id;save();render();$('sidebar').classList.remove('open')};function current(){return chats.find(c=>c.id===active)};function render(){const h=$('history');h.replaceChildren();chats.forEach(c=>{const b=document.createElement('button');b.className='history-item'+(c.id===active?' active':'');b.textContent=c.title;b.onclick=()=>{active=c.id;render();$('sidebar').classList.remove('open')};h.append(b)});const root=$('messages');root.replaceChildren();const c=current();if(!c||!c.messages.length){const welcome=document.createElement('div');welcome.className='welcome';welcome.innerHTML='<div class="logo" style="margin:auto;width:50px;height:50px;font-size:24px">✦</div><h1>How can I help you today?</h1><p>Ask a question, explore an idea, or start creating.</p>';const s=document.createElement('div');s.className='suggestions';['Explain a coding concept','Help me plan my study day','Give me a project idea','Write a professional email'].forEach(t=>{const b=document.createElement('button');b.textContent=t;b.onclick=()=>{$('prompt').value=t;$('prompt').focus()};s.append(b)});welcome.append(s);root.append(welcome);return}c.messages.forEach(m=>{const row=document.createElement('div');row.className='bubble '+m.role;const av=document.createElement('div');av.className='avatar';av.textContent=m.role==='user'?'You':'✦';const body=document.createElement('div');body.className='message-body';body.textContent=m.content;row.append(av,body);root.append(row)});root.scrollTop=root.scrollHeight};let generator;
+</style></head><body><div id="app"><aside class="sidebar" id="sidebar"><div class="brand"><div class="logo">✦</div>ChatNest</div><button class="new" id="newChat">＋ New chat</button><div class="small-title">Your conversations</div><div class="history" id="history"></div><div class="side-footer"><button class="theme" id="theme">◐ Toggle theme</button><small style="color:var(--muted)">Chats saved only in this browser</small></div></aside><main class="main"><header class="top"><div style="display:flex;align-items:center;gap:12px"><button class="mobile-menu" id="menu">☰</button><div><strong>ChatNest AI</strong><div class="subtitle">A space to think, learn & create</div></div></div><span class="pill" id="mode">On-device AI</span></header><section class="messages" id="messages"></section><div class="composer-wrap"><div style="max-width:800px;margin:0 auto 8px"><label>Reply using <select id="provider"><option value="local">On-device AI</option><option value="router">OpenRouter Free</option><option value="google">Google AI Studio</option><option value="groq">Groq</option><option value="xai">Grok (paid API)</option></select></label> <span id="credentials" hidden><input type="password" id="apiKey" autocomplete="off" placeholder="Your provider API key" aria-label="Provider API key"> <a id="keysLink" target="_blank" rel="noreferrer">Get key</a> <button id="connect" hidden>Connect OpenRouter</button></span><div id="feedback" role="status"></div></div><form class="composer" id="form"><textarea id="prompt" rows="1" placeholder="Ask me anything..." aria-label="Your message"></textarea><button class="send" type="submit" aria-label="Send">↑</button></form><div class="note">First message downloads a small language model. Your conversations stay on this device.</div></div></main></div><script>
+const $=id=>document.getElementById(id);const KEY='chatnest-v1';let chats=[],active=null;try{chats=JSON.parse(localStorage.getItem(KEY))||[]}catch{};let dark=localStorage.getItem('chatnest-theme')!=='light';document.body.classList.toggle('light',!dark);const save=()=>localStorage.setItem(KEY,JSON.stringify(chats));function newChat(){const c={id:crypto.randomUUID(),title:'New conversation',messages:[]};chats.unshift(c);active=c.id;save();render();$('sidebar').classList.remove('open')};function current(){return chats.find(c=>c.id===active)};function render(){const h=$('history');h.replaceChildren();chats.forEach(c=>{const b=document.createElement('button');b.className='history-item'+(c.id===active?' active':'');b.textContent=c.title;b.onclick=()=>{active=c.id;render();$('sidebar').classList.remove('open')};h.append(b)});const root=$('messages');root.replaceChildren();const c=current();if(!c||!c.messages.length){const welcome=document.createElement('div');welcome.className='welcome';welcome.innerHTML='<div class="logo" style="margin:auto;width:50px;height:50px;font-size:24px">✦</div><h1>How can I help you today?</h1><p>Ask a question, explore an idea, or start creating.</p>';const s=document.createElement('div');s.className='suggestions';['Explain a coding concept','Help me plan my study day','Give me a project idea','Write a professional email'].forEach(t=>{const b=document.createElement('button');b.textContent=t;b.onclick=()=>{$('prompt').value=t;$('prompt').focus()};s.append(b)});welcome.append(s);root.append(welcome);return}c.messages.forEach(m=>{const row=document.createElement('div');row.className='bubble '+m.role;const av=document.createElement('div');av.className='avatar';av.textContent=m.role==='user'?'You':'✦';const body=document.createElement('div');body.className='message-body';body.textContent=m.content;row.append(av,body);root.append(row)});root.scrollTop=root.scrollHeight};const services = {
+  router: ['https://openrouter.ai/api/v1','openrouter/free','https://openrouter.ai/settings/keys'],
+  google: ['https://generativelanguage.googleapis.com/v1beta/openai','gemini-flash-latest','https://aistudio.google.com/apikey'],
+  groq: ['https://api.groq.com/openai/v1','openai/gpt-oss-120b','https://console.groq.com/keys'],
+  xai: ['https://api.x.ai/v1','grok-4.7','https://console.x.ai/']
+};
+const keys = new Map();
+$('apiKey').oninput = () => keys.set($('provider').value, $('apiKey').value.trim());
+$('provider').onchange = () => {
+  const id = $('provider').value;
+  $('credentials').hidden = id === 'local';
+  $('connect').hidden = id !== 'router';
+  $('apiKey').value = keys.get(id) || '';
+  $('feedback').textContent = '';
+  $('mode').textContent = $('provider').selectedOptions[0].text;
+  document.querySelector('.note').textContent = id === 'local' ? 'First message downloads the model to your device.' : 'Recent messages go to the selected provider. Your key stays in this tab until closed or refreshed.';
+  if (services[id]) $('keysLink').href = services[id][2];
+};
+function base64url(bytes) {
+  return btoa(String.fromCharCode(...bytes)).replaceAll('+','-').replaceAll('/','_').replaceAll('=','');
+}
+$('connect').onclick = async () => {
+  const verifier = base64url(crypto.getRandomValues(new Uint8Array(32)));
+  sessionStorage.setItem('router-verifier',verifier);
+  const digest = await crypto.subtle.digest('SHA-256',new TextEncoder().encode(verifier));
+  const params = new URLSearchParams({callback_url:location.origin+'/',code_challenge_method:'S256',code_challenge:base64url(new Uint8Array(digest)),key_label:'ChatNest'});
+  location.assign('https://openrouter.ai/auth?'+params);
+};
+async function finishConnection() {
+  const code = new URLSearchParams(location.search).get('code');
+  if (!code) return;
+  window.history.replaceState(null,'',location.pathname);
+  const verifier = sessionStorage.getItem('router-verifier');
+  sessionStorage.removeItem('router-verifier');
+  if (!verifier) return;
+  try {
+    const result = await fetch('https://openrouter.ai/api/v1/auth/keys',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,code_verifier:verifier,code_challenge_method:'S256'})});
+    const {key} = await result.json();
+    if (!result.ok || !key) throw Error();
+    keys.set('router',key);
+    $('provider').value = 'router';
+    $('provider').onchange();
+    $('feedback').textContent = 'OpenRouter connected.';
+  } catch { $('feedback').textContent = 'Connection expired. Select OpenRouter and connect again.'; }
+}
+finishConnection();
+async function cloudReply(id,messages) {
+  const [url,model] = services[id];
+  const key = keys.get(id);
+  if (!key) throw Error('Connect your provider or enter its API key above.');
+  const result = await fetch(url+'/chat/completions',{method:'POST',signal:AbortSignal.timeout(90000),headers:{'Content-Type':'application/json',Authorization:'Bearer '+key},body:JSON.stringify({model,messages:messages.slice(-20)})});
+  if (!result.ok) throw Error(({401:'Invalid API key.',402:'Provider requires credits.',403:'Provider denied access. Check your key and model access.',429:'Provider quota reached. Try again later.'})[result.status] || 'Provider returned HTTP '+result.status);
+  const data = await result.json();
+  const reply = data.choices?.[0]?.message?.content;
+  if (!reply?.trim()) throw Error('Provider returned an empty answer. Please retry.');
+  return reply;
+}
+let generator;
 async function send(event) {
   event.preventDefault();
   const input = $('prompt');
@@ -16,12 +73,22 @@ async function send(event) {
   input.value = '';
   button.disabled = true;
   try {
+    $('feedback').textContent = '';
+    $('provider').disabled = true;
+    if ($('provider').value !== 'local') {
+      $('mode').textContent = 'Thinking…';
+      const reply = await cloudReply($('provider').value,chat.messages);
+      chat.messages.push({role:'assistant',content:reply});
+      save();
+      $('mode').textContent = $('provider').selectedOptions[0].text;
+      return;
+    }
     if (!generator) {
       $('mode').textContent = 'Downloading model…';
       const {pipeline, env} = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.2/dist/transformers.min.js');
       env.allowLocalModels = false;
       env.backends.onnx.wasm.numThreads = 1;
-      generator = await pipeline('text-generation', 'onnx-community/SmolLM2-135M-Instruct-ONNX-MHA', {device:'wasm', dtype:'q8'});
+      generator = await pipeline('text-generation', 'onnx-community/SmolLM2-135M-Instruct-ONNX-MHA', {device:'wasm', dtype:'q8',progress_callback: p => { if (p.status === 'progress' && p.total) $('mode').textContent = 'Downloading '+p.file.split('/').pop()+' '+Math.round(p.loaded/p.total*100)+'%'; }});
     }
     $('mode').textContent = 'Thinking…';
     const output = await generator(chat.messages.slice(-7).map(m=>({...m,content:m.content.slice(-1200)})), {max_new_tokens:100,do_sample:false});
@@ -31,11 +98,13 @@ async function send(event) {
     $('mode').textContent = 'On-device AI';
   } catch (error) {
     $('mode').textContent = 'Model unavailable — retry';
+    $('feedback').textContent = $('provider').value === 'local' ? 'Local model could not run. Select OpenRouter Free above to chat online.' : error.message;
     input.value = message;
     chat.messages.pop();
     save();
     console.error(error);
   } finally {
+    $('provider').disabled = false;
     button.disabled = false;
     render();
   }
